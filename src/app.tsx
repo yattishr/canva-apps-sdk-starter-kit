@@ -40,7 +40,7 @@ import header_1_sm from "assets/images/header_1_sm.jpg";
 import header_2_sm from "assets/images/header_2_sm.jpg";
 
 import styles from "styles/components.css";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 const IMAGE_ELEMENT_WIDTH = 50;
 const IMAGE_ELEMENT_HEIGHT = 50;
@@ -87,7 +87,7 @@ const images = {
 };
 
 export const App = () => {
-  const [dataUrl, setDataUrl] = useState(header_1_sm);
+  const [dataUrl, setDataUrl] = useState(header_2_sm);
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [generatedInsights, setGeneratedInsights] = useState("");
@@ -127,33 +127,11 @@ export const App = () => {
     });
   };
 
-  // const uploadHeaderImage = useCallback(async () => {
-  //   console.log("--- Uploading Header Image and setting ImageRef...uploadHeaderImage ---");
-
-  //   if (headerImageRef) {
-  //     console.log("--- Header Image already uploaded, skipping... ---");
-  //     return;
-  //   }
-
-
-  //   try {
-  //     const { ref } = await upload({
-  //       type: "IMAGE",
-  //       mimeType: "image/jpeg",
-  //       url: dataUrl,
-  //       thumbnailUrl: dataUrl,
-  //     });
-  //     console.log("Image uploaded successfully. ImageRef:", ref);
-  //     setHeaderImageRef(ref);
-  //   } catch (error) {
-  //     console.error("Error uploading image:", error);
-  //   }
-  // }, [dataUrl, headerImageRef]);
-
+  // updated uploadHeaderImage
   const uploadHeaderImage = useCallback(async () => {
     console.log("--- Attempting to upload Header Image... ---");
     if (headerImageRef) {
-      console.log("--- Header Image already uploaded, skipping... ---");
+      console.log("--- Header Image already uploaded, using existing ref... ---");
       return headerImageRef;
     }
   
@@ -169,26 +147,29 @@ export const App = () => {
       return ref;
     } catch (error) {
       console.error("Error uploading image:", error);
-      throw error; // Rethrow the error to handle it where the function is called
+      throw error;
     }
   }, [dataUrl, headerImageRef]);
-    
-  // set header image
-  const setHeaderImage = useCallback(async (imageRef) => {
+  // end -- updated uploadHeaderImage
 
-    // this message is logged to the console...
-    console.log(`--- Inside setHeaderImage... headerImageRef: ${headerImageRef} ---`);
-    
-    // the issue lies here....there is no headerImageRef so the code exits at this return statement...
-    if (!imageRef) {
-      console.error("Header image reference is not set");
-      return;
+  const memoizedHeaderImageRef = useMemo(() => {
+    if (headerImageRef) {
+      return headerImageRef;
     }
-
-    // this block of code is NEVER executed so the image is not added to the document.
-    // BUT the image does get uploaded to Canva and an ImageRef is created.
+    
+    // Trigger the upload and return a promise that resolves to the ImageRef
+    return uploadHeaderImage();
+  }, [headerImageRef, uploadHeaderImage]);
+      
+  // Use memoizedHeaderImageRef instead of calling uploadHeaderImage directly
+  const setHeaderImage = useCallback(async () => {
     try {
-      // add the header image with height and width. align to top of page.
+      const imageRef = await memoizedHeaderImageRef;
+      if (!imageRef) {
+        console.error("Header image reference is not set");
+        return;
+      }
+
       await addNativeElement({
         type: "IMAGE",
         ref: imageRef,
@@ -201,7 +182,7 @@ export const App = () => {
     } catch (error) {
       console.error("Error adding image from setHeaderImage:", error);
     }
-  }, [headerImageRef]); 
+  }, [memoizedHeaderImageRef]);
 
       
   const handleFileChange = (files) => {
@@ -224,7 +205,6 @@ export const App = () => {
     console.log(`Translate option selected: ${value}`);
   };
 
-
   const addTextElement = (text: string) => {
     addNativeElement({
       type: "TEXT",
@@ -243,7 +223,7 @@ export const App = () => {
   const addHeaderTextElement = (text: string) => {
     addNativeElement({
       type: "TEXT",
-      color: "#2d3436",
+      color: "#FFFFFF",
       fontSize: 35,
       fontWeight: "heavy",
       textAlign: "center",
@@ -263,19 +243,15 @@ export const App = () => {
     const retryDelay = 3000; // 3 seconds
 
      // Ensure the image is uploaded and ref is set
-    const imageRef = await uploadHeaderImage();
+    // const imageRef = await uploadHeaderImage();
 
-    // console.log("--- checking to see if headerImageRef is not empty from addPageWithRateLimit ---")
-    // if (!headerImageRef) {
-    //   console.log("--- headerImageRef is empty...calling uploadHeaderImage from addPageWithRateLimit ---")
-    //   await uploadHeaderImage(); // Ensure the image is uploaded and ref is set before adding pages
-    // }    
+    const imageRef = await memoizedHeaderImageRef
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         await addPage({ title, elements });
         await setBackgroundToSolidColor();
-        await setHeaderImage(imageRef); // Pass the headerImageRef if necessary
+        await setHeaderImage(); 
         console.log("Page added successfully:", title);
         return; // Exit the function if successful
       } catch (error) {
