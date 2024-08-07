@@ -1,0 +1,22 @@
+TO DO [30 July 2024]: 
+
+1. On the first page, add in an image/shape with the Heading of the Report append with text " REPORT" {steal styling from YouTube demo}
+2. Add some styling to the Heading along with a report date (To be calculated based on system date)
+
+3. Add/Create a new page, with the first section of the data fetched from the Db
+4. Add some styling to the text
+5. Add/Upload some Fancy-shmancy images to the first page of the deck/slide.
+6. If possible, add a page number to the bottom of each slide..If not possible, just hard-code the text instead.
+7. FOR every additional page added, follow steps 3 to 6...
+
+
+Okay, so heres a new plan:
+
+1. I think we should ditch the idea of using DocXTemplater as it is not supported within the Canva SDK.
+2. We should leverage all the design elements that are available within the Canva SDK for generating the report based on the data we receive from the backend API.
+3. First thing I would like to do is to create a single page Canva document that contains a heading that is attached to the heading we fetch from our API. We display this as the first page of our Canva document. We can add styling to this pages later, using style elements from the Canva SDK.
+4. We create additional pages for displaying the remaining sections of the data from the API. We can add styling to these pages later, using style elements from the Canva SDK. If the data does not fit on one page, we create additional pages to display the data.
+5. On the final page of the Canva document, we add in the remaining data from the API with the heading "Recommendations". We can add styling to this page later, using style elements from the Canva SDK.
+6. Once we have completed the above, we can add in additional styling elements from the Canva SDK to create a neatly styled Canva report. 
+
+I will provide you with the additional 
