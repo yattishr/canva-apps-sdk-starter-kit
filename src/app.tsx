@@ -242,9 +242,7 @@ export const App = () => {
     const maxRetries = 5;
     const retryDelay = 3000; // 3 seconds
 
-     // Ensure the image is uploaded and ref is set
-    // const imageRef = await uploadHeaderImage();
-
+     // Ensure the image is uploaded and ref is set. await and use the memoized Image ref.
     const imageRef = await memoizedHeaderImageRef
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -252,6 +250,10 @@ export const App = () => {
         await addPage({ title, elements });
         await setBackgroundToSolidColor();
         await setHeaderImage(); 
+
+          // Update progress as pages are added
+          setProgress((prev) => prev + 20);
+
         console.log("Page added successfully:", title);
         return; // Exit the function if successful
       } catch (error) {
@@ -271,22 +273,35 @@ export const App = () => {
   const generateReport = async (data: any) => {
     const { title, summary, sections, conclusion } = data;
 
+    // to ensure the progress bar does not exceed 100 steps.
+    const totalSteps = sections.length + 2; // title + summary + sections + conclusion
+    const increment = 100 / totalSteps;    
+
+    setProgress(0);
+
     // Add the first page with the title and summary
     await addPageWithRateLimit("Report Title Page", []);
     addHeaderTextElement(title);
     addTextElement(summary);
+
+    // set the Progress
+    setProgress((prevProgress) => Math.min(prevProgress + increment, 100));
 
     // Add a new page for each section
     for (const section of sections) {
       await addPageWithRateLimit(section.heading, []);
       addHeaderTextElement(section.heading);
       addTextElement(section.content);
+
+      // update the progress
+      setProgress((prevProgress) => Math.min(prevProgress + increment, 100));
     }
 
     // Add the conclusion on a new page
     await addPageWithRateLimit("Conclusion", []);
     addHeaderTextElement("Conclusion");
     addTextElement(conclusion);
+    setProgress(100); // Ensure it ends at 100%
   };
 
   const generateInsights = async () => {
@@ -297,6 +312,7 @@ export const App = () => {
 
     setIsLoading(true);
     setShowDescriptionAlert(false);
+    setProgress(0);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -406,6 +422,13 @@ export const App = () => {
         >
           {isLoading ? "Generating Insights..." : "Generate Insights"}
         </Button>
+
+        {/* Progress Bar */}
+        {isLoading && (
+          <Box padding="2u">
+            <ProgressBar size="medium" tone="info" value={progress} />
+          </Box>
+        )}
 
         <Text size="xsmall" variant="regular">
           Note: {appName} is available in preview mode only.
