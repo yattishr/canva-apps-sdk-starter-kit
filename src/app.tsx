@@ -371,48 +371,11 @@ export const App = () => {
           onChange={handleDescriptionChange}
         />
 
-        <Text>
-          {appName} offers translations to six different languages. Choose your
-          preferred language from the options below:
-        </Text>
-        <Select
-          onChange={handleTranslate}
-          options={[
-            {
-              label: "English",
-              value: "english",
-            },
-            {
-              label: "French",
-              value: "french",
-            },
-            {
-              label: "German",
-              value: "german",
-            },
-            {
-              label: "Italian",
-              value: "italian",
-            },
-            {
-              label: "Hindi",
-              value: "hindi",
-            },
-            {
-              label: "Chinese",
-              value: "chinese",
-            },
-          ]}
-        />
+        {/* --- Language Translation feature ---*/}
+        {/* Translation text control. Removing this feature for next release after Canva approval. Y.R 12 Sept 2024. */}
 
-        {/* Creativity slider control */}
-        <Text>
-          {appName} can also make your report sound more or less creative. Move
-          the slider below to give it a try!
-        </Text>
-        <Box paddingStart="2u">
-          <Slider defaultValue={0} max={7} min={1} step={1} />
-        </Box>
+        {/*--- Creativity slider control ---*/}
+        {/* Removed slider control for Canva review. Re-implement after Canva approval. Y.R 12 Spet 2024. */}
 
         <Button
           variant="primary"
@@ -430,9 +393,9 @@ export const App = () => {
           </Box>
         )}
 
-        <Text size="xsmall" variant="regular">
+        {/* <Text size="xsmall" variant="regular">
           Note: {appName} is available in preview mode only.
-        </Text>
+        </Text> */}
 
         {isLoading && <LoadingIndicator /> && (
           <Alert title={appName} tone="info">
