@@ -34,6 +34,7 @@ import {
   FontWeightName,
   requestFontSelection,
   upload,
+  getTemporaryUrl,
 } from "@canva/asset";
 
 import header_1_sm from "assets/images/header_1_sm.jpg";
@@ -108,17 +109,35 @@ export const App = () => {
 
   const [headerImageRef, setHeaderImageRef] = useState<ImageRef | null>(null);
 
-  useEffect(() => {
+  // Replacing this useEffect to accomodate for localstorage retrieval of the Image Ref.
+  // useEffect(() => {
+  //   getDefaultPageDimensions().then((dimensions) => {
+  //     if (!dimensions) {
+  //       setError(
+  //         "Adding pages in unbounded documents, such as Whiteboards, is not supported."
+  //       );
+  //     }
+  //     // setBackgroundToSolidColor();
+  //     setDefaultPageDimensions(dimensions);
+  //   });
+  // }, []);
+
+
+// Updated useEffect to check if the image ref is already stored
+useEffect(() => {
+  const storedRef = getImageRefFromLocalStorage();
+  if (storedRef) {
+    setHeaderImageRef(storedRef); // Use the stored ref if available
+  } else {
     getDefaultPageDimensions().then((dimensions) => {
       if (!dimensions) {
-        setError(
-          "Adding pages in unbounded documents, such as Whiteboards, is not supported."
-        );
+        setError("Adding pages in unbounded documents, such as Whiteboards, is not supported.");
       }
-      // setBackgroundToSolidColor();
       setDefaultPageDimensions(dimensions);
     });
-  }, []);
+  }
+}, []);  
+
 
   // set the background color
   const setBackgroundToSolidColor = async () => {
@@ -128,29 +147,75 @@ export const App = () => {
   };
 
   // updated uploadHeaderImage
-  const uploadHeaderImage = useCallback(async () => {
-    console.log("--- Attempting to upload Header Image... ---");
-    if (headerImageRef) {
-      console.log("--- Header Image already uploaded, using existing ref... ---");
-      return headerImageRef;
-    }
+  // const uploadHeaderImage = useCallback(async () => {
+  //   console.log("--- Attempting to upload Header Image... ---");
+  //   if (headerImageRef) {
+  //     console.log("--- Header Image already uploaded, using existing ref... ---");
+  //     return headerImageRef;
+  //   }
   
-    try {
-      const { ref } = await upload({
-        type: "IMAGE",
-        mimeType: "image/jpeg",
-        url: dataUrl,
-        thumbnailUrl: dataUrl,
-      });
-      console.log("Image uploaded successfully. ImageRef:", ref);
-      setHeaderImageRef(ref);
-      return ref;
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      throw error;
-    }
-  }, [dataUrl, headerImageRef]);
+  //   try {
+  //     const { ref } = await upload({
+  //       type: "IMAGE",
+  //       mimeType: "image/jpeg",
+  //       url: dataUrl,
+  //       thumbnailUrl: dataUrl,
+  //     });
+  //     console.log("Image uploaded successfully. ImageRef:", ref);
+  //     setHeaderImageRef(ref);
+  //     return ref;
+  //   } catch (error) {
+  //     console.error("Error uploading image:", error);
+  //     throw error;
+  //   }
+  // }, [dataUrl, headerImageRef]);
   // end -- updated uploadHeaderImage
+
+// Updated uploadHeaderImage
+const uploadHeaderImage = useCallback(async () => {
+  console.log("--- Attempting to upload Header Image... ---");
+
+  // Step 1: Check if the headerImageRef exists
+  if (headerImageRef) {
+    console.log("--- Checking if header image is already uploaded... ---");
+    
+    try {
+      // Check for existing image with the provided ref
+      const { url } = await getTemporaryUrl({
+        type: "IMAGE",
+        ref: headerImageRef,
+      });
+
+      // If a URL is returned, the image is already uploaded
+      if (url) {
+        console.log("--- Header Image already uploaded, using existing ref... ---", url);
+        return headerImageRef; // Return existing ref
+      }
+    } catch (error) {
+      console.error("Error checking for existing image:", error);
+    }
+  }
+
+  // Step 2: If no existing image, proceed to upload
+  try {
+    console.log("--- Header Image not found, uploading new image... ---");
+    const { ref } = await upload({
+      type: "IMAGE",
+      mimeType: "image/jpeg",
+      url: dataUrl,
+      thumbnailUrl: dataUrl,
+    });
+    console.log("Image uploaded successfully. ImageRef:", ref);
+    
+    // Save the ref for future use
+    setHeaderImageRef(ref);
+    return ref;
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    throw error;
+  }
+}, [dataUrl, headerImageRef]);
+// End -- updated uploadHeaderImage  
 
   const memoizedHeaderImageRef = useMemo(() => {
     if (headerImageRef) {
@@ -203,6 +268,15 @@ export const App = () => {
 
   const handleTranslate = (value) => {
     console.log(`Translate option selected: ${value}`);
+  };
+
+  // Utility function to store and retrieve from localStorage
+  const storeImageRefInLocalStorage = (ref) => {
+    localStorage.setItem("headerImageRef", ref);
+  };  
+
+  const getImageRefFromLocalStorage = () => {
+    return localStorage.getItem("headerImageRef");
   };
 
   const addTextElement = (text: string) => {
