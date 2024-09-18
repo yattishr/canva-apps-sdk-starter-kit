@@ -41,6 +41,7 @@ import header_2_sm from "assets/images/header_2_sm.jpg";
 
 import styles from "styles/components.css";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { json } from "stream/consumers";
 
 const IMAGE_ELEMENT_WIDTH = 50;
 const IMAGE_ELEMENT_HEIGHT = 50;
@@ -93,6 +94,10 @@ export const App = () => {
   const [generatedInsights, setGeneratedInsights] = useState("");
   const [isLoading, setIsLoading] = useState(false); // Loading state
   const [showDescriptionAlert, setShowDescriptionAlert] = useState(false);
+  
+  // Initial state for Slider control.
+  const [sliderValue, setSliderValue] = useState(0);
+  const [creativityLevel, setCreativityLevel] = useState(0);
 
   const [state, setState] = useState<UIState>(initialState);
   const { text, color, fontWeight, fontStyle, decoration, textAlign } = state;
@@ -204,6 +209,21 @@ export const App = () => {
   const handleTranslate = (value) => {
     console.log(`Translate option selected: ${value}`);
   };
+
+  const handleSliderChange = (value) => {
+    setSliderValue(value)
+
+    console.log("Creativity level being sent to backend:", sliderValue);
+
+    // Map the slider value to creativity levels.
+    const creativityMap = {
+      0: "Business",
+      1: "Shakespearean",
+      2: "Pirate"
+    };
+
+    setCreativityLevel(creativityMap[value]);
+  }
 
   const addTextElement = (text: string) => {
     addNativeElement({
@@ -317,12 +337,20 @@ export const App = () => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("description", description);
+    formData.append("creativity", sliderValue.toString());  // Convert number to string
+    
+    // Debugging FormData properly
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}: ${value}`);
+    }
 
     try {
       const response = await fetch(`${BACKEND_HOST}/analyze`, {
         method: "POST",
         body: formData,
       });
+
+      console.log(`Logging response from POST API: ${JSON.stringify(response)}`)
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -411,8 +439,11 @@ export const App = () => {
           the slider below to give it a try!
         </Text>
         <Box paddingStart="2u">
-          <Slider defaultValue={0} max={7} min={1} step={1} />
+          <Slider onChange={handleSliderChange} defaultValue={0} max={2} min={0} step={1} value={sliderValue} />
         </Box>
+        <Text size="xsmall" variant="regular">
+          Current Creativity: {sliderValue === 0 ? 'Business' : sliderValue === 1 ? 'Shakespearean' : 'Pirate'}
+        </Text>
 
         <Button
           variant="primary"
@@ -429,10 +460,6 @@ export const App = () => {
             <ProgressBar size="medium" tone="info" value={progress} />
           </Box>
         )}
-
-        <Text size="xsmall" variant="regular">
-          Note: {appName} is available in preview mode only.
-        </Text>
 
         {isLoading && <LoadingIndicator /> && (
           <Alert title={appName} tone="info">
