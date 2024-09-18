@@ -94,7 +94,7 @@ export const App = () => {
   const [generatedInsights, setGeneratedInsights] = useState("");
   const [isLoading, setIsLoading] = useState(false); // Loading state
   const [showDescriptionAlert, setShowDescriptionAlert] = useState(false);
-  
+
   // Initial state for Slider control.
   const [sliderValue, setSliderValue] = useState(0);
   const [creativityLevel, setCreativityLevel] = useState(0);
@@ -136,10 +136,12 @@ export const App = () => {
   const uploadHeaderImage = useCallback(async () => {
     console.log("--- Attempting to upload Header Image... ---");
     if (headerImageRef) {
-      console.log("--- Header Image already uploaded, using existing ref... ---");
+      console.log(
+        "--- Header Image already uploaded, using existing ref... ---"
+      );
       return headerImageRef;
     }
-  
+
     try {
       const { ref } = await upload({
         type: "IMAGE",
@@ -161,11 +163,11 @@ export const App = () => {
     if (headerImageRef) {
       return headerImageRef;
     }
-    
+
     // Trigger the upload and return a promise that resolves to the ImageRef
     return uploadHeaderImage();
   }, [headerImageRef, uploadHeaderImage]);
-      
+
   // Use memoizedHeaderImageRef instead of calling uploadHeaderImage directly
   const setHeaderImage = useCallback(async () => {
     try {
@@ -189,7 +191,6 @@ export const App = () => {
     }
   }, [memoizedHeaderImageRef]);
 
-      
   const handleFileChange = (files) => {
     console.log("--- handleFileChange ---");
     setFile(files[0]);
@@ -211,7 +212,7 @@ export const App = () => {
   };
 
   const handleSliderChange = (value) => {
-    setSliderValue(value)
+    setSliderValue(value);
 
     console.log("Creativity level being sent to backend:", sliderValue);
 
@@ -219,11 +220,11 @@ export const App = () => {
     const creativityMap = {
       0: "Business",
       1: "Shakespearean",
-      2: "Pirate"
+      2: "Pirate",
     };
 
     setCreativityLevel(creativityMap[value]);
-  }
+  };
 
   const addTextElement = (text: string) => {
     addNativeElement({
@@ -256,23 +257,23 @@ export const App = () => {
 
   // logic to handle rate limiting when adding new pages.
   const addPageWithRateLimit = async (title: string, elements: any[]) => {
-    console.log("--- adding new page from addPageWithRateLimit ---")
+    console.log("--- adding new page from addPageWithRateLimit ---");
 
     // Retry logic for rate limiting
     const maxRetries = 5;
     const retryDelay = 3000; // 3 seconds
 
-     // Ensure the image is uploaded and ref is set. await and use the memoized Image ref.
-    const imageRef = await memoizedHeaderImageRef
+    // Ensure the image is uploaded and ref is set. await and use the memoized Image ref.
+    const imageRef = await memoizedHeaderImageRef;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         await addPage({ title, elements });
         await setBackgroundToSolidColor();
-        await setHeaderImage(); 
+        await setHeaderImage();
 
-          // Update progress as pages are added
-          setProgress((prev) => prev + 20);
+        // Update progress as pages are added
+        setProgress((prev) => prev + 20);
 
         console.log("Page added successfully:", title);
         return; // Exit the function if successful
@@ -285,7 +286,7 @@ export const App = () => {
           throw error; // Rethrow if it's not a rate limit error
         }
       }
-    }    
+    }
 
     throw new Error("Failed to add page after several retries.");
   };
@@ -295,7 +296,7 @@ export const App = () => {
 
     // to ensure the progress bar does not exceed 100 steps.
     const totalSteps = sections.length + 2; // title + summary + sections + conclusion
-    const increment = 100 / totalSteps;    
+    const increment = 100 / totalSteps;
 
     setProgress(0);
 
@@ -337,8 +338,8 @@ export const App = () => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("description", description);
-    formData.append("creativity", sliderValue.toString());  // Convert number to string
-    
+    formData.append("creativity_level", sliderValue.toString()); // Convert number to string
+
     // Debugging FormData properly
     for (const [key, value] of formData.entries()) {
       console.log(`${key}: ${value}`);
@@ -350,7 +351,9 @@ export const App = () => {
         body: formData,
       });
 
-      console.log(`Logging response from POST API: ${JSON.stringify(response)}`)
+      console.log(
+        `Logging response from POST API: ${JSON.stringify(response)}`
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -359,7 +362,7 @@ export const App = () => {
       const data = await response.json();
       console.log(`--- Logging data from API: ${JSON.stringify(data)}`);
       setGeneratedInsights(data.insights);
-      
+
       await generateReport(data);
 
       setIsLoading(false);
@@ -386,6 +389,7 @@ export const App = () => {
         <FileInput
           accept={[".csv", ".txt", ".xlsx"]}
           onDropAcceptedFiles={handleFileChange}
+          stretchButton
         />
         {file && (
           <FileInputItem label={file.name} onDeleteClick={handleDelete} />
@@ -439,10 +443,24 @@ export const App = () => {
           the slider below to give it a try!
         </Text>
         <Box paddingStart="2u">
-          <Slider onChange={handleSliderChange} defaultValue={0} max={2} min={0} step={1} value={sliderValue} />
+          <Slider
+            onChange={handleSliderChange}
+            defaultValue={0}
+            max={100}
+            min={0}
+            step={15}
+            value={sliderValue}
+          />
         </Box>
         <Text size="xsmall" variant="regular">
-          Current Creativity: {sliderValue === 0 ? 'Business' : sliderValue === 1 ? 'Shakespearean' : 'Pirate'}
+          Current Creativity:{" "}
+          {sliderValue <= 30
+            ? "Business"
+            : sliderValue <= 60
+            ? "Conversational and friendly"
+            : sliderValue <= 90
+            ? "Poetic, similar to the style of Shakespeare"
+            : "Playful and pirate-like"}
         </Text>
 
         <Button
