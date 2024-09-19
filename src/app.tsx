@@ -88,7 +88,7 @@ const images = {
 };
 
 export const App = () => {
-  const [dataUrl, setDataUrl] = useState(header_2_sm);
+  const [dataUrl, setDataUrl] = useState(header_1_sm);
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [generatedInsights, setGeneratedInsights] = useState("");
@@ -110,34 +110,17 @@ export const App = () => {
   const [headerImageRef, setHeaderImageRef] = useState<ImageRef | null>(null);
 
   // Replacing this useEffect to accomodate for localstorage retrieval of the Image Ref.
-  // useEffect(() => {
-  //   getDefaultPageDimensions().then((dimensions) => {
-  //     if (!dimensions) {
-  //       setError(
-  //         "Adding pages in unbounded documents, such as Whiteboards, is not supported."
-  //       );
-  //     }
-  //     // setBackgroundToSolidColor();
-  //     setDefaultPageDimensions(dimensions);
-  //   });
-  // }, []);
-
-
-// Updated useEffect to check if the image ref is already stored
-useEffect(() => {
-  const storedRef = getImageRefFromLocalStorage();
-  if (storedRef) {
-    setHeaderImageRef(storedRef); // Use the stored ref if available
-  } else {
+  useEffect(() => {
     getDefaultPageDimensions().then((dimensions) => {
       if (!dimensions) {
-        setError("Adding pages in unbounded documents, such as Whiteboards, is not supported.");
+        setError(
+          "Adding pages in unbounded documents, such as Whiteboards, is not supported."
+        );
       }
+      // setBackgroundToSolidColor();
       setDefaultPageDimensions(dimensions);
     });
-  }
-}, []);  
-
+  }, []);
 
   // set the background color
   const setBackgroundToSolidColor = async () => {
@@ -146,86 +129,50 @@ useEffect(() => {
     });
   };
 
-  // updated uploadHeaderImage
-  // const uploadHeaderImage = useCallback(async () => {
-  //   console.log("--- Attempting to upload Header Image... ---");
-  //   if (headerImageRef) {
-  //     console.log("--- Header Image already uploaded, using existing ref... ---");
-  //     return headerImageRef;
-  //   }
-  
-  //   try {
-  //     const { ref } = await upload({
-  //       type: "IMAGE",
-  //       mimeType: "image/jpeg",
-  //       url: dataUrl,
-  //       thumbnailUrl: dataUrl,
-  //     });
-  //     console.log("Image uploaded successfully. ImageRef:", ref);
-  //     setHeaderImageRef(ref);
-  //     return ref;
-  //   } catch (error) {
-  //     console.error("Error uploading image:", error);
-  //     throw error;
-  //   }
-  // }, [dataUrl, headerImageRef]);
-  // end -- updated uploadHeaderImage
-
-// Updated uploadHeaderImage
-const uploadHeaderImage = useCallback(async () => {
-  console.log("--- Attempting to upload Header Image... ---");
-
-  // Step 1: Check if the headerImageRef exists
-  if (headerImageRef) {
-    console.log("--- Checking if header image is already uploaded... ---");
-    
-    try {
-      // Check for existing image with the provided ref
-      const { url } = await getTemporaryUrl({
-        type: "IMAGE",
-        ref: headerImageRef,
-      });
-
-      // If a URL is returned, the image is already uploaded
-      if (url) {
-        console.log("--- Header Image already uploaded, using existing ref... ---", url);
-        return headerImageRef; // Return existing ref
-      }
-    } catch (error) {
-      console.error("Error checking for existing image:", error);
+  // updated uploadHeaderImage 
+  const uploadHeaderImage = useCallback(async () => {
+    console.log("--- Attempting to upload Header Image... ---");
+    if (headerImageRef) {
+      console.log("--- Header Image already uploaded, using existing ref... ---");
+      return headerImageRef;
     }
-  }
 
-  // Step 2: If no existing image, proceed to upload
-  try {
-    console.log("--- Header Image not found, uploading new image... ---");
-    const { ref } = await upload({
-      type: "IMAGE",
-      mimeType: "image/jpeg",
-      url: dataUrl,
-      thumbnailUrl: dataUrl,
-    });
-    console.log("Image uploaded successfully. ImageRef:", ref);
-    
-    // Save the ref for future use
-    setHeaderImageRef(ref);
-    return ref;
-  } catch (error) {
-    console.error("Error uploading image:", error);
-    throw error;
-  }
-}, [dataUrl, headerImageRef]);
-// End -- updated uploadHeaderImage  
+    try {
+      const { ref } = await upload({
+        type: "IMAGE",
+        mimeType: "image/jpeg",
+        url: dataUrl,
+        thumbnailUrl: dataUrl,
+      });
+      console.log("Image uploaded successfully. ImageRef:", ref);
+
+      setHeaderImageRef(ref);
+      
+      // log the temporary image URL
+      // console.log('--- Logging temporary URL ---')
+      // const tempURL = await getTemporaryUrl({
+      //   type: "IMAGE",
+      //   ref: ref
+      // })
+      // console.log(`--- The temporary image url is: ${tempURL.url} ---`)
+
+      return ref;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  }, [dataUrl, headerImageRef]);
+  // end -- updated uploadHeaderImage
 
   const memoizedHeaderImageRef = useMemo(() => {
     if (headerImageRef) {
       return headerImageRef;
     }
-    
+
     // Trigger the upload and return a promise that resolves to the ImageRef
     return uploadHeaderImage();
   }, [headerImageRef, uploadHeaderImage]);
-      
+
   // Use memoizedHeaderImageRef instead of calling uploadHeaderImage directly
   const setHeaderImage = useCallback(async () => {
     try {
@@ -249,7 +196,6 @@ const uploadHeaderImage = useCallback(async () => {
     }
   }, [memoizedHeaderImageRef]);
 
-      
   const handleFileChange = (files) => {
     console.log("--- handleFileChange ---");
     setFile(files[0]);
@@ -268,15 +214,6 @@ const uploadHeaderImage = useCallback(async () => {
 
   const handleTranslate = (value) => {
     console.log(`Translate option selected: ${value}`);
-  };
-
-  // Utility function to store and retrieve from localStorage
-  const storeImageRefInLocalStorage = (ref) => {
-    localStorage.setItem("headerImageRef", ref);
-  };  
-
-  const getImageRefFromLocalStorage = () => {
-    return localStorage.getItem("headerImageRef");
   };
 
   const addTextElement = (text: string) => {
@@ -310,23 +247,23 @@ const uploadHeaderImage = useCallback(async () => {
 
   // logic to handle rate limiting when adding new pages.
   const addPageWithRateLimit = async (title: string, elements: any[]) => {
-    console.log("--- adding new page from addPageWithRateLimit ---")
+    console.log("--- adding new page from addPageWithRateLimit ---");
 
     // Retry logic for rate limiting
     const maxRetries = 5;
     const retryDelay = 3000; // 3 seconds
 
-     // Ensure the image is uploaded and ref is set. await and use the memoized Image ref.
-    const imageRef = await memoizedHeaderImageRef
+    // Ensure the image is uploaded and ref is set. await and use the memoized Image ref.
+    const imageRef = await memoizedHeaderImageRef;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         await addPage({ title, elements });
         await setBackgroundToSolidColor();
-        await setHeaderImage(); 
+        await setHeaderImage(); // commenting this out for testing...
 
-          // Update progress as pages are added
-          setProgress((prev) => prev + 20);
+        // Update progress as pages are added
+        setProgress((prev) => prev + 20);
 
         console.log("Page added successfully:", title);
         return; // Exit the function if successful
@@ -339,7 +276,7 @@ const uploadHeaderImage = useCallback(async () => {
           throw error; // Rethrow if it's not a rate limit error
         }
       }
-    }    
+    }
 
     throw new Error("Failed to add page after several retries.");
   };
@@ -349,9 +286,15 @@ const uploadHeaderImage = useCallback(async () => {
 
     // to ensure the progress bar does not exceed 100 steps.
     const totalSteps = sections.length + 2; // title + summary + sections + conclusion
-    const increment = 100 / totalSteps;    
+    const increment = 100 / totalSteps;
 
     setProgress(0);
+
+    // set the background color of the First page.
+    setBackgroundToSolidColor()
+    
+    // Add some text here that will display on the first page of the Report.
+    addTextElement("REPORT GENERATED BY INSIGHTS WIZARD.");
 
     // Add the first page with the title and summary
     await addPageWithRateLimit("Report Title Page", []);
@@ -405,7 +348,7 @@ const uploadHeaderImage = useCallback(async () => {
       const data = await response.json();
       console.log(`--- Logging data from API: ${JSON.stringify(data)}`);
       setGeneratedInsights(data.insights);
-      
+
       await generateReport(data);
 
       setIsLoading(false);
